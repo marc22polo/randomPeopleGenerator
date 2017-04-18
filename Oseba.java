@@ -1,5 +1,3 @@
-package test;
-
 public class Oseba {
 	private String name;
 	private String surname;
