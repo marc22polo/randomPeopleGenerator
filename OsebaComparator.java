@@ -1,5 +1,3 @@
-package test;
-
 import java.util.Comparator;
 
 public class OsebaComparator implements Comparator<Oseba>{
