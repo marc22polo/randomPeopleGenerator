@@ -1,4 +1,6 @@
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Scanner;
 
 public class RandomUsers {
@@ -7,16 +9,28 @@ public class RandomUsers {
 	public static String[] surnames = {"Novak","Kožuh","Valentinčič","Perinčič","Marinič","Ščurek","Belica","Demšar","Ambroželj","Filej","Plesničar","Žele","Ivančič","Bučar","Kovačič","Potočnik","Mlakar","Kos","Vidmar","Burgič","Sorčan","Arčon","Hozanović","Mugerli","Bizjak","Mislej","Kokošar","Boltar","Lazar","Laščak","Novšak","Velišček","Mohar","Rebula","Devetak","Korošec","Gabrijelčič","Makarovič","Mozetič","Komel","Škrlec","Munih","Šorli","Čuk","Čelik","Bratina","Modrijančič","Vouk","Kofol","Bremec"};
 	public static String[] organizacije = {"ŠC Nova Gorica","HIT","Policija Tolmin","Rdeči križ Slovenije","Unicef","IGN","Unesco","who","Karitas","zzst","SŽ","Avrigo","Fia","ssz","zzzs","OŠ Podbrdo","Garfield","Dobro","Mercator","Spar","Lidl","Metalflex","Hidria","Prijon","Knjižnica Tolmin","Gostol","Avtobum","Tik Kobarid","Pekarna Hlebček","Tukaj","Salonit Anhovo","Rut d.o.o."};
 	private static String datrojstva;
+	public static ArrayList<Oseba> people = new ArrayList<>();
 	
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		Scanner sc = new Scanner(System.in);
 		System.out.print("please enter the ammount of users you want to generate: ");
 		int ammount = sc.nextInt();
+		System.out.print("Do you want to create SQL data (y/n): ");
+		boolean createSQL = sc.next().charAt(0) == 'y' ? true : false;
+		String tableName = "";
+		String[] param = {"emso","davcna" ,"name","surname","dob","organization","username","password"};
+		String parameters = "";
+		if(createSQL){
+			System.out.print("Enter the table name: ");
+			tableName = sc.next();
+			System.out.print("Enter parameters (name, surname, emso, davcna, dob, organization, username, password) type \"all\" for everything (example: name,surname,emso): ");
+			parameters = sc.next();
+		}
 		sc.close();
-		ArrayList<Oseba> people = new ArrayList<>();
 		ArrayList<String> emsoti = new ArrayList<>();
 		ArrayList<String> usernames = new ArrayList<>();
+		ArrayList<String> davcne = new ArrayList<>();
 		for(int i = 0; i < ammount; i++){
 			String emso = generateEmso();
 			while(emso.length() > 13)
@@ -32,34 +46,63 @@ public class RandomUsers {
 				name = namesf[(int)(Math.random()*(namesf.length)+0)];
 			else
 				name = namesm[(int)(Math.random()*(namesm.length)+0)];
-			String upime = (name.charAt(0)+surname).toLowerCase();
+			String upime = (name+"."+surname).toLowerCase();
 			int j = 1;
 			while(usernames.contains(upime)){
-				System.out.println(usernames.contains(upime));
-				if(j > 1){
-					upime = (name.charAt(0)+surname).toLowerCase()+j;
-				}
-				else
+				if(j == 1)
 					upime += j;
-				
+				else if(j < 10)
+					upime = upime.substring(0, upime.length()-1) + j;
+				else if(j < 100)
+					upime = upime.substring(0, upime.length()-2) + j;
+				j++;
 			}
 			String organizacija = organizacije[(int)(Math.random()*(organizacije.length))+0];
 			String geslo = generatePassword();
-			people.add(new Oseba(name, surname, emso, datrojstva, organizacija, upime, geslo));
+			String davcna = generateDavnca();
+			while(davcne.contains(davcna))
+				davcna = generateDavnca();
+			people.add(new Oseba(name, surname, emso, davcna, datrojstva, organizacija, upime, geslo));
 		}
-		System.out.printf("%12s", "name");
-		System.out.printf("%13s", "surname");
-		System.out.printf("%15s", "emso");
-		System.out.printf("%12s", "DOB");
-		System.out.printf("%22s", "organization");
-		System.out.printf("%15s", "username");
-		System.out.printf("%18s", "password");
-		System.out.println();
-		System.out.println("-----------------------------------------------------------------------------------------------------------");
-		for(Oseba x : people){
-			x.getOseba();
+		if(!createSQL){
+			System.out.printf("%12s", "name");
+			System.out.printf("%13s", "surname");
+			System.out.printf("%15s", "emso");
+			System.out.printf("%10s", "davcna");
+			System.out.printf("%12s", "DOB");
+			System.out.printf("%22s", "organization");
+			System.out.printf("%23s", "username");
+			System.out.printf("%18s", "password");
+			System.out.println();
+			System.out.println("-----------------------------------------------------------------------------------------------------------");
+			for(Oseba x : people){
+				x.getOseba();
+			}
+			System.out.println("-----------------------------------------------------------------------------------------------------------");
 		}
-		System.out.println("-----------------------------------------------------------------------------------------------------------");
+		if(createSQL){
+			ArrayList<String> parama = new ArrayList<>(Arrays.asList(param));
+			if(parameters.equals("all"))
+				printSQLUsers(parama, tableName);
+			else{
+				boolean removed = true;
+				String[] tmp = parameters.split(",");
+				for(int i = 0; i < tmp.length; i++){
+					if(tmp[i].charAt(0) == '-')
+						parama.remove(tmp[i].substring(1, tmp[i].length()));
+					else if(tmp[i].charAt(0) != '-'){
+						if(removed){
+							removed = false;
+							parama.clear();
+						}
+						parama.add(tmp[i]);
+					}
+				}
+				printSQLUsers(parama,tableName);
+			}
+			System.out.println();
+		}
+//		printSortedPeople();
 	}
 	
 	public static String generateEmso(){
@@ -159,7 +202,7 @@ public class RandomUsers {
 				 password += (int)(Math.random()*10+0);
 				 break;
 			 case 2: 
-				 password += (char)(int)(Math.random()*26+97);
+				 password += (char)(int)(Math.random()*26+97); 
 				 break;
 			 case 3:
 				 password += (char)(int)(Math.random()*26+65);
@@ -169,4 +212,74 @@ public class RandomUsers {
 		return password;
 	}
 	
+	public static String generateDavnca(){
+		return (int)(Math.random()*90000000+10000000)+"";
+	}
+	
+	public static void printSQLUsers(ArrayList<String> param, String tableName){
+		System.out.println();
+		for(Oseba x : people){
+			System.out.print("INSERT INTO "+tableName+" VALUES (");
+			for(int i = 0; i < param.size(); i++){
+				switch(param.get(i)){
+				case "emso":
+					if(i == param.size()-1)
+						System.out.print("\'"+x.getEmso()+"\'");
+					else 
+						System.out.print("\'"+x.getEmso()+"\', ");
+					break;
+				case "davcna":
+					if(i == param.size()-1)
+						System.out.print("\'"+x.getDavcna()+"\'");
+					else 
+						System.out.print("\'"+x.getDavcna()+"\', ");
+					break;
+				case "name":
+					if(i == param.size()-1)
+						System.out.print("\'"+x.getName()+"\'");
+					else 
+						System.out.print("\'"+x.getName()+"\', ");
+					break;
+				case "surname":
+					if(i == param.size()-1)
+						System.out.print("\'"+x.getSurname()+"\'");
+					else 
+						System.out.print("\'"+x.getSurname()+"\', ");
+					break;
+				case "dob":
+					if(i == param.size()-1)
+						System.out.print("\'"+x.getDOB()+"\'");
+					else 
+						System.out.print("\'"+x.getDOB()+"\', ");
+					break;
+				case "organization":
+					if(i == param.size()-1)
+						System.out.print("\'"+x.getOrganizacija()+"\'");
+					else 
+						System.out.print("\'"+x.getOrganizacija()+"\', ");
+					break;
+				case "username":
+					if(i == param.size()-1)
+						System.out.print("\'"+x.getUsername()+"\'");
+					else 
+						System.out.print("\'"+x.getUsername()+"\', ");
+					break;
+				case "password":
+					if(i == param.size()-1)
+						System.out.print("\'"+x.getPassword()+"\'");
+					else 
+						System.out.print("\'"+x.getPassword()+"\', ");
+					break;
+				}
+			}
+			System.out.println(");");
+		}
+	}
+	
+	public static void printSortedPeople(){
+		Collections.sort(people, new OsebaComparator());
+		for(Oseba x : people){
+			x.getOseba();
+		}
+	}
 }
